@@ -41,10 +41,21 @@ npm ci && npm run build && npx wrangler pages deploy frontend/dist --project-nam
 
 Never put `SUPABASE_SECRET_KEY` or AI keys in Cloudflare (frontend is public).
 
-## Custom domain
+## Live URLs
 
-1. Pages → **Custom domains** → add `phill-application-copilot.uk`
-2. Ensure DNS points to Cloudflare (nameservers or CNAME to Pages)
+| URL | What it is |
+|-----|------------|
+| **https://phill-job-application-copilot.pages.dev** | Correct Stage 1 dashboard (Pages) |
+| `https://phill-job-application-copilot.*.workers.dev` | Old **placeholder** Worker — ignore |
+| `https://phill-application-copilot.uk` | Custom domain — only works after DNS is configured |
+
+## Custom domain (`phill-application-copilot.uk`)
+
+Safari “Can’t Find the Server” means **DNS is not pointing anywhere yet**.
+
+1. Cloudflare Pages → **phill-job-application-copilot** → **Custom domains** → add `phill-application-copilot.uk`
+2. At your domain registrar, use the nameservers or CNAME Cloudflare shows
+3. Wait for DNS propagation (up to 24h, often minutes)
 
 ## Local test before push
 
