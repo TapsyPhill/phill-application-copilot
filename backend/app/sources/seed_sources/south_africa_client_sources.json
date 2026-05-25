@@ -1,0 +1,53 @@
+{
+  "version": "1.0",
+  "target_section": "client_lead",
+  "source_group": "south_africa",
+  "sources": [
+    {
+      "id": "za_client_gumtree",
+      "source_name": "Gumtree South Africa Services",
+      "url": "https://www.gumtree.co.za/s-services/c9302",
+      "base_domain": "www.gumtree.co.za",
+      "source_group": "south_africa",
+      "country": "South Africa",
+      "region": "national",
+      "language": "en",
+      "category": "client_lead",
+      "source_type": "classified",
+      "target_section": "client_lead",
+      "scraping_method_preference": "scrapingbee",
+      "priority": 8,
+      "enabled": true,
+      "requires_js": true,
+      "requires_login": false,
+      "allows_search": true,
+      "notes": "South Africa services classified — high priority market",
+      "search_terms": [],
+      "created_at": "2026-05-25T00:00:00Z",
+      "updated_at": "2026-05-25T00:00:00Z"
+    },
+    {
+      "id": "za_client_facebook_marketplace",
+      "source_name": "Facebook Marketplace ZA (manual)",
+      "url": "https://www.facebook.com/marketplace/",
+      "base_domain": "www.facebook.com",
+      "source_group": "south_africa",
+      "country": "South Africa",
+      "region": "national",
+      "language": "en",
+      "category": "client_lead",
+      "source_type": "community_portal",
+      "target_section": "client_lead",
+      "scraping_method_preference": "manual_review",
+      "priority": 5,
+      "enabled": false,
+      "requires_js": true,
+      "requires_login": true,
+      "allows_search": false,
+      "notes": "Login required — use manual URL ingestion only",
+      "search_terms": [],
+      "created_at": "2026-05-25T00:00:00Z",
+      "updated_at": "2026-05-25T00:00:00Z"
+    }
+  ]
+}
