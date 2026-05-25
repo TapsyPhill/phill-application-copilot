@@ -30,12 +30,12 @@ Store sensitive values in **GitHub repository secrets** (Settings → Secrets an
 | Framework preset | Vite |
 | Build command | `npm run build` |
 | Build output directory | `dist` |
-| Root directory | `/` |
+| Root directory | `frontend` |
 | Production branch | `main` |
 
 Deployment is handled by **Cloudflare Pages Git integration**, not Wrangler CLI.
 
-## Supabase (planned)
+## Supabase
 
 | Variable | Purpose |
 |----------|---------|
