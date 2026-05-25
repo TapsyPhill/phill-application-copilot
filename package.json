@@ -1,20 +1,16 @@
 {
-  "name": "phill-application-copilot",
+  "name": "phill-job-application-copilot",
   "private": true,
-  "version": "0.1.0",
+  "version": "1.0.0-stage1",
+  "description": "Opportunity Command Center — Stage 1 intelligence and review dashboard",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "preview": "npm run preview --prefix frontend",
+    "install:frontend": "npm install --prefix frontend"
   },
-  "dependencies": {
-    "lucide-react": "^0.511.0",
-    "react": "^19.1.0",
-    "react-dom": "^19.1.0"
-  },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.5.0",
-    "vite": "^6.3.5"
-  }
+  "workspaces": [
+    "frontend"
+  ]
 }
