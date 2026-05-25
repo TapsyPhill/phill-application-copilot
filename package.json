@@ -9,7 +9,8 @@
     "build": "npm run build --prefix frontend",
     "preview": "npm run preview --prefix frontend",
     "install:frontend": "npm install --prefix frontend",
-    "pages:deploy": "npm run build && wrangler pages deploy frontend/dist --project-name=phill-job-application-copilot"
+    "pages:deploy": "npm run build && wrangler pages deploy frontend/dist --project-name=phill-job-application-copilot",
+    "cf:deploy": "npm run build && wrangler deploy"
   },
   "workspaces": [
     "frontend"

@@ -1,5 +1,30 @@
 # Cloudflare Pages — fix deploy error
 
+## Why Cloudflare build history shows old commits (814e62d, b14a307)
+
+Your **Workers** Git integration was building an old layout and running `wrangler deploy` **without** `frontend/dist` assets. GitHub `main` now has the full dashboard (`a1cafcc+`), but Cloudflare did not rebuild it correctly.
+
+**Fix in Cloudflare dashboard** → `phill-job-application-copilot` → **Settings** → **Build**:
+
+| Setting | Value |
+|---------|--------|
+| Production branch | `main` |
+| Build command | `npm ci && npm run build` |
+| **Remove** | `npx wrangler deploy` alone (or replace deploy with below) |
+| Deploy command | `npx wrangler deploy` (only after `wrangler.toml` has `[assets]` — now in repo) |
+
+Or use **GitHub Actions** workflow `Deploy to Cloudflare` (adds `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `VITE_*` secrets).
+
+**Environment variables** (Cloudflare build + Pages):
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_PROJECT_DOMAIN`
+
+Then click **Retry deployment** on the latest `main` commit.
+
+---
+
 ## The error you saw
 
 ```
