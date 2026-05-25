@@ -30,6 +30,10 @@ Enable **Supabase Auth → Email magic link** and add your Cloudflare URL to red
 
 Backend pipelines run via **GitHub Actions** (`daily-scrape`, `ai-analysis`, `rag-indexing`, `backup-export`), not on Cloudflare.
 
+**Cloudflare deploy failed with `wrangler deploy`?** See [docs/cloudflare-pages-setup.md](docs/cloudflare-pages-setup.md) — use `frontend/dist` and **Pages**, not Workers deploy.
+
+**GitHub Actions scrape/AI failed?** Add repository secrets (`SUPABASE_URL`, `SUPABASE_SECRET_KEY`, …) then run workflow **Validate Repository Secrets**.
+
 ## Quick start
 
 ```bash

@@ -1,0 +1,7 @@
+# Cloudflare Pages — static frontend (Opportunity Command Center)
+# Use: npm run build && npx wrangler pages deploy frontend/dist --project-name=phill-job-application-copilot
+# Do NOT use bare `wrangler deploy` (Workers bundle, not static dist).
+
+name = "phill-job-application-copilot"
+pages_build_output_dir = "frontend/dist"
+compatibility_date = "2024-01-01"
