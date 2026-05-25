@@ -1,11 +1,4 @@
-# Cloudflare Workers + static assets (Opportunity Command Center SPA)
-# Git build: npm ci && npm run build  →  npx wrangler deploy
-# Pages alternative: npm run pages:deploy
-
+# Cloudflare Pages (GitHub Action + pages deploy)
 name = "phill-job-application-copilot"
 compatibility_date = "2024-01-01"
-
-[assets]
-directory = "./frontend/dist"
-not_found_handling = "single-page-application"
-html_handling = "auto-trailing-slash"
+pages_build_output_dir = "frontend/dist"

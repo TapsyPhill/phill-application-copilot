@@ -11,7 +11,7 @@ Your **Workers** Git integration was building an old layout and running `wrangle
 | Production branch | `main` |
 | Build command | `npm ci && npm run build` |
 | **Remove** | `npx wrangler deploy` alone (or replace deploy with below) |
-| Deploy command | `npx wrangler deploy` (only after `wrangler.toml` has `[assets]` — now in repo) |
+| Deploy command | `npm run build && npx wrangler deploy -c wrangler.worker.toml` |
 
 Or use **GitHub Actions** workflow `Deploy to Cloudflare` (adds `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `VITE_*` secrets).
 
