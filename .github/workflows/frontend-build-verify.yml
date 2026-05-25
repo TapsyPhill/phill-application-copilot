@@ -6,6 +6,8 @@ on:
     paths:
       - "frontend/**"
       - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/frontend-build-verify.yml"
   pull_request:
     branches: [main]
   workflow_dispatch:
