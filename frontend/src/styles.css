@@ -96,6 +96,20 @@ body {
 }
 .login-card input { width: 100%; margin: 0.5rem 0 1rem; padding: 0.5rem; }
 .login-card button { width: 100%; padding: 0.6rem; background: var(--accent); border: none; color: #fff; border-radius: 6px; cursor: pointer; }
+.login-card-wide { width: min(420px, 92vw); }
+.login-card label { display: block; margin-top: 0.75rem; font-size: 0.85rem; }
+.login-tabs { display: flex; gap: 0.5rem; margin: 1rem 0; }
+.login-tabs .tab {
+  flex: 1;
+  background: var(--bg);
+  border: 1px solid #2a3548;
+  color: var(--muted);
+  padding: 0.4rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.login-tabs .tab.active { border-color: var(--accent); color: var(--accent); }
+.muted.small { font-size: 0.75rem; margin: 0.5rem 0; }
 .error-text { color: var(--low); }
 .action-row, .note-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.75rem 0; }
 .action-row button, .note-row button {
