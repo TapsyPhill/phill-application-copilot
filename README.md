@@ -47,8 +47,10 @@ pip install -r requirements.txt
 python scripts/health_check.py
 python scripts/seed_sources.py
 
-# Frontend
-cd frontend && npm install && npm run dev
+# Frontend (reads VITE_* from repo root .env)
+npm run install:frontend
+npm run dev
+# Open http://localhost:5173 — restart dev server after editing .env
 ```
 
 Apply database schema:
