@@ -12,41 +12,35 @@ export default function Overview() {
       return;
     }
     async function load() {
-      const today = new Date().toISOString().slice(0, 10);
-      const [all, high, review, client, phd, jobs, remote] = await Promise.all([
-        supabase.from("opportunities").select("id", { count: "exact", head: true }),
-        supabase.from("opportunities").select("id", { count: "exact", head: true }).gte("final_score", 80),
-        supabase
-          .from("opportunities")
-          .select("id", { count: "exact", head: true })
-          .eq("status", "manual_review"),
-        supabase
-          .from("opportunities")
-          .select("id", { count: "exact", head: true })
-          .eq("category", "client_lead"),
-        supabase.from("opportunities").select("id", { count: "exact", head: true }).eq("category", "phd"),
-        supabase.from("opportunities").select("id", { count: "exact", head: true }).eq("category", "job"),
-        supabase
-          .from("opportunities")
-          .select("id", { count: "exact", head: true })
-          .eq("category", "remote_job"),
-      ]);
-      const { count: newToday } = await supabase
-        .from("opportunities")
-        .select("id", { count: "exact", head: true })
-        .gte("first_seen_at", `${today}T00:00:00`);
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        const active = (query) => query.neq("status", "rejected").neq("status", "archived").neq("status", "not_recommended");
+        const [all, high, review, client, phd, jobs, remote] = await Promise.all([
+          active(supabase.from("opportunities").select("id", { count: "exact", head: true })),
+          active(supabase.from("opportunities").select("id", { count: "exact", head: true })).gte("final_score", 80),
+          supabase.from("opportunities").select("id", { count: "exact", head: true }).eq("status", "manual_review"),
+          active(supabase.from("opportunities").select("id", { count: "exact", head: true })).eq("category", "client_lead"),
+          active(supabase.from("opportunities").select("id", { count: "exact", head: true })).eq("category", "phd"),
+          active(supabase.from("opportunities").select("id", { count: "exact", head: true })).eq("category", "job"),
+          active(supabase.from("opportunities").select("id", { count: "exact", head: true })).eq("category", "remote_job"),
+        ]);
+        const { count: newToday } = await active(
+          supabase.from("opportunities").select("id", { count: "exact", head: true }),
+        ).gte("first_seen_at", `${today}T00:00:00`);
 
-      setMetrics({
-        total: all.count ?? 0,
-        newToday: newToday ?? 0,
-        high: high.count ?? 0,
-        review: review.count ?? 0,
-        client: client.count ?? 0,
-        phd: phd.count ?? 0,
-        jobs: jobs.count ?? 0,
-        remote: remote.count ?? 0,
-      });
-      setLoading(false);
+        setMetrics({
+          total: all.count ?? 0,
+          newToday: newToday ?? 0,
+          high: high.count ?? 0,
+          review: review.count ?? 0,
+          client: client.count ?? 0,
+          phd: phd.count ?? 0,
+          jobs: jobs.count ?? 0,
+          remote: remote.count ?? 0,
+        });
+      } finally {
+        setLoading(false);
+      }
     }
     load();
   }, []);

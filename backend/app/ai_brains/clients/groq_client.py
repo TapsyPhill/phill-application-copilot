@@ -21,6 +21,8 @@ class GroqClient:
                 {"role": "system", "content": "Return valid JSON only."},
                 {"role": "user", "content": prompt},
             ],
+            response_format={"type": "json_object"},
+            max_completion_tokens=2048,
             temperature=0.1,
         )
         return chat.choices[0].message.content or "{}"

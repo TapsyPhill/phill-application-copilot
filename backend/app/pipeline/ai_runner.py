@@ -47,11 +47,22 @@ class AiRunner:
                 self._repo.log_api_usage(o.get("model_name", "ai"), units=1)
 
             vote = self._voter.decide(outputs)
-            if vote.final_category in ("rejected",) or not vote.final_category:
+            relevant_outputs = [o for o in outputs if o.get("is_relevant") is True]
+            if not relevant_outputs or vote.final_category in ("rejected",) or not vote.final_category:
+                self._repo.audit(
+                    "ai_rejected_cleaned_post",
+                    entity_type="cleaned_posts",
+                    entity_id=post.get("id"),
+                    details={
+                        "content_hash": post.get("content_hash"),
+                        "models_used": [o.get("model_name") for o in outputs],
+                        "reasons": [o.get("reason") for o in outputs],
+                    },
+                )
                 processed += 1
                 continue
 
-            primary = outputs[0]
+            primary = relevant_outputs[0]
             opp_payload, details, breakdown = build_opportunity_payload(
                 vote.final_category,
                 vote.final_status,

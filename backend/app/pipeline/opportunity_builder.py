@@ -90,7 +90,7 @@ def build_opportunity_payload(
         "contact_phone": model_data.get("phone_found"),
         "posted_date": _parse_date(model_data.get("posted_date")),
         "deadline": _parse_date(model_data.get("deadline")),
-        "status": vote_status,
+        "status": _normalize_status(vote_status),
         "final_score": breakdown.final_score,
         "confidence_score": confidence,
         "url_hash": uh,
@@ -121,6 +121,16 @@ def _parse_date(value: Any) -> str | None:
     if re.match(r"^\d{4}-\d{2}-\d{2}$", text):
         return text
     return None
+
+
+def _normalize_status(value: Any) -> str:
+    allowed = {"new", "reviewing", "saved", "rejected", "manual_review", "archived", "stage2_ready"}
+    status = str(value or "new").strip()
+    if status in allowed:
+        return status
+    if status in {"not_recommended", "low_priority", "low", "irrelevant"}:
+        return "rejected"
+    return "manual_review"
 
 
 def _evidence_score(data: dict[str, Any]) -> float:

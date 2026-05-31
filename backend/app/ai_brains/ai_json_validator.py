@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from typing import Any
 
 REQUIRED_FIELDS = (
@@ -18,6 +19,7 @@ REQUIRED_FIELDS = (
 
 
 def parse_and_validate(raw: str) -> tuple[dict[str, Any] | None, str | None]:
+    raw = _extract_json(raw)
     try:
         data = json.loads(raw)
     except json.JSONDecodeError as exc:
@@ -32,3 +34,15 @@ def parse_and_validate(raw: str) -> tuple[dict[str, Any] | None, str | None]:
         if (data.get("confidence") or 0) > 70:
             return None, "high_confidence_requires_evidence"
     return data, None
+
+
+def _extract_json(raw: str) -> str:
+    text = (raw or "").strip()
+    if text.startswith("```"):
+        text = re.sub(r"^```(?:json)?\s*", "", text)
+        text = re.sub(r"\s*```$", "", text)
+    start = text.find("{")
+    end = text.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        return text[start : end + 1]
+    return text

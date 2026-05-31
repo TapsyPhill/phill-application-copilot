@@ -4,9 +4,10 @@ import CategoryTabs from "../components/CategoryTabs";
 import OpportunityCard from "../components/OpportunityCard";
 import { useOpportunities } from "../hooks/useOpportunities";
 
-const TABS = ["Germany", "Global", "South Africa", "Contact Available", "Manual Review", "High Priority"];
+const TABS = ["All", "Germany", "Global", "South Africa", "Contact Available", "Manual Review", "High Priority"];
 
 const TAB_FILTERS = {
+  All: {},
   Germany: { country: "Germany" },
   Global: {},
   "South Africa": { country: "South Africa" },
@@ -16,7 +17,7 @@ const TAB_FILTERS = {
 };
 
 export default function ClientLeads() {
-  const [tab, setTab] = useState(TABS[0]);
+  const [tab, setTab] = useState("All");
   const filters = useMemo(
     () => ({ category: "client_lead", ...TAB_FILTERS[tab] }),
     [tab],
@@ -44,7 +45,8 @@ export default function ClientLeads() {
       {error && <p className="error-text">{String(error)}</p>}
       {!loading && filtered.length === 0 && (
         <div className="empty-state">
-          No leads yet. Run <code>python scripts/run_daily_scrape.py</code> after seeding sources.
+          No leads in this filter yet. Try <strong>All</strong>, or run{" "}
+          <code>python scripts/run_daily_scrape.py</code> after seeding sources.
         </div>
       )}
       <div className="card-list">

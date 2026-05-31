@@ -8,6 +8,9 @@ export const supabase = url && key ? createClient(url, key) : null;
 export async function fetchOpportunities(filters = {}) {
   if (!supabase) return { data: [], error: "Supabase not configured" };
   let q = supabase.from("opportunities").select("*").order("final_score", { ascending: false });
+  if (!filters.includeInactive) {
+    q = q.neq("status", "rejected").neq("status", "archived").neq("status", "not_recommended");
+  }
   if (filters.category) q = q.eq("category", filters.category);
   if (filters.subcategory) q = q.eq("subcategory", filters.subcategory);
   if (filters.viewed !== undefined) q = q.eq("viewed", filters.viewed);
