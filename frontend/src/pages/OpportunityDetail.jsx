@@ -38,6 +38,8 @@ export default function OpportunityDetail() {
 
   if (loading) return <p className="muted">Loading…</p>;
   if (error || !opp) return <p className="error-text">{error || "Not found"}</p>;
+  const contactEmail = validEmail(opp.contact_email) ? opp.contact_email : null;
+  const contactPhone = validPhone(opp.contact_phone) ? opp.contact_phone : null;
 
   return (
     <div>
@@ -54,8 +56,8 @@ export default function OpportunityDetail() {
         <h3>Application Route</h3>
         <div className="application-grid">
           <Info label="Method" value={opp.application_method} />
-          <Info label="Email" value={opp.contact_email} href={opp.contact_email ? `mailto:${opp.contact_email}` : null} />
-          <Info label="Phone" value={opp.contact_phone} />
+          <Info label="Email" value={contactEmail} href={contactEmail ? `mailto:${contactEmail}` : null} />
+          <Info label="Phone" value={contactPhone} />
           <Info label="Deadline" value={opp.deadline} />
           <Info label="Application URL" value={opp.application_url} href={opp.application_url} />
           <Info label="Funding" value={details?.funding_status} />
@@ -161,7 +163,7 @@ export default function OpportunityDetail() {
 }
 
 function Info({ label, value, href }) {
-  if (!value || value === "unknown" || value === "unclear") return null;
+  if (!displayableValue(value)) return null;
   return (
     <div className="info-item">
       <span className="muted">{label}</span>
@@ -174,4 +176,20 @@ function Info({ label, value, href }) {
       )}
     </div>
   );
+}
+
+function displayableValue(value) {
+  if (value === true || value === false || value == null) return false;
+  const text = String(value).trim();
+  return text && !["true", "false", "unknown", "unclear", "null", "undefined"].includes(text.toLowerCase());
+}
+
+function validEmail(value) {
+  if (!displayableValue(value)) return false;
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value).trim());
+}
+
+function validPhone(value) {
+  if (!displayableValue(value)) return false;
+  return String(value).replace(/\D/g, "").length >= 8;
 }

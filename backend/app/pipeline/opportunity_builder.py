@@ -48,7 +48,7 @@ def build_opportunity_payload(
             "funding_status": model_data.get("funding_status") or "unclear",
             "funding_proof": _snippet(model_data, "funding_proof"),
             "deadline_proof": _snippet(model_data, "deadline_proof"),
-            "email_application_possible": "yes" if model_data.get("email_found") else "unclear",
+            "email_application_possible": "yes" if _valid_email(model_data.get("email_found")) else "unclear",
             "application_email": model_data.get("email_found"),
             "email_proof": _snippet(model_data, "email_proof") or extracted.get("email_proof"),
             "portal_link": model_data.get("application_url"),
@@ -61,7 +61,7 @@ def build_opportunity_payload(
             "company": model_data.get("organization"),
             "skills_required": model_data.get("required_skills") or [],
             "language_requirements": model_data.get("language_requirements") or [],
-            "email_application_possible": "yes" if model_data.get("email_found") else "unclear",
+            "email_application_possible": "yes" if _valid_email(model_data.get("email_found")) else "unclear",
             "application_email": model_data.get("email_found"),
             "email_proof": _snippet(model_data, "email_proof") or extracted.get("email_proof"),
             "portal_url": model_data.get("application_url"),
@@ -95,8 +95,8 @@ def build_opportunity_payload(
         "original_url": source_url,
         "application_method": model_data.get("application_method") or "unknown",
         "contact_method": model_data.get("contact_method") or "unknown",
-        "contact_email": model_data.get("email_found"),
-        "contact_phone": model_data.get("phone_found"),
+        "contact_email": model_data.get("email_found") if _valid_email(model_data.get("email_found")) else None,
+        "contact_phone": model_data.get("phone_found") if _valid_phone(model_data.get("phone_found")) else None,
         "posted_date": _parse_date(model_data.get("posted_date")),
         "deadline": _parse_date(model_data.get("deadline")),
         "application_url": model_data.get("application_url"),
@@ -151,6 +151,10 @@ def _evidence_score(data: dict[str, Any]) -> float:
 
 def _merge_application_signals(model_data: dict[str, Any], extracted: dict[str, Any]) -> dict[str, Any]:
     merged = dict(model_data)
+    if not _valid_email(merged.get("email_found")):
+        merged["email_found"] = None
+    if not _valid_phone(merged.get("phone_found")):
+        merged["phone_found"] = None
     if not merged.get("email_found") and extracted.get("primary_email"):
         merged["email_found"] = extracted["primary_email"]
     if not merged.get("phone_found") and extracted.get("primary_phone"):
@@ -170,13 +174,27 @@ def _merge_application_signals(model_data: dict[str, Any], extracted: dict[str, 
 
 def _scoring_data(model_data: dict[str, Any]) -> dict[str, Any]:
     data = {**model_data, "evidence_quality_score": _evidence_score(model_data)}
-    if model_data.get("email_found"):
+    if _valid_email(model_data.get("email_found")):
         data["contact_email"] = model_data["email_found"]
         data["email_application_possible"] = "yes"
-    if model_data.get("phone_found"):
+    if _valid_phone(model_data.get("phone_found")):
         data["contact_phone"] = model_data["phone_found"]
     if _snippet(model_data, "funding_proof"):
         data["funding_proof"] = _snippet(model_data, "funding_proof")
     if model_data.get("urgency_score") is not None:
         data["urgency_score"] = model_data.get("urgency_score") or 0
     return data
+
+
+def _valid_email(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    text = value.strip()
+    return bool(re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", text))
+
+
+def _valid_phone(value: Any) -> bool:
+    if not isinstance(value, str):
+        return False
+    digits = re.sub(r"\D", "", value)
+    return len(digits) >= 8

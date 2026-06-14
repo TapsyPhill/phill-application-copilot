@@ -5,6 +5,7 @@ export default function OpportunityCard({ opportunity }) {
   const o = opportunity;
   const summary = o.summary ? `${o.summary.slice(0, 160)}${o.summary.length > 160 ? "…" : ""}` : "";
   const fundingStatus = o.phd_opportunity_details?.funding_status;
+  const contactEmail = validEmail(o.contact_email) ? o.contact_email : null;
   return (
     <article className="opp-card">
       <div className="opp-card-header">
@@ -18,7 +19,7 @@ export default function OpportunityCard({ opportunity }) {
         {o.organization || "—"} · {[o.city, o.country].filter(Boolean).join(", ") || "—"}
       </p>
       <div className="card-facts">
-        {o.contact_email && <span>Email apply: {o.contact_email}</span>}
+        {contactEmail && <span>Email apply: {contactEmail}</span>}
         {o.deadline && <span>Deadline: {o.deadline}</span>}
         {o.application_method && o.application_method !== "unknown" && <span>Method: {o.application_method}</span>}
         {fundingStatus && fundingStatus !== "unclear" && <span>Funding: {fundingStatus}</span>}
@@ -26,4 +27,13 @@ export default function OpportunityCard({ opportunity }) {
       {summary && <p className="summary">{summary}</p>}
     </article>
   );
+}
+
+function validEmail(value) {
+  if (value === true || value === false || value == null) return false;
+  const text = String(value).trim();
+  if (!text || ["true", "false", "unknown", "unclear", "null", "undefined"].includes(text.toLowerCase())) {
+    return false;
+  }
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(text);
 }

@@ -17,6 +17,7 @@
 | `run_rag_indexing.py` | Chroma / vector indexing |
 | `run_stage1_smoke.py` | End-to-end pipeline smoke test |
 | `audit_pipeline_quality.py` | Read-only pipeline quality audit |
+| `backfill_application_contacts.py` | Repair boolean placeholder contacts and extract real emails from cleaned text |
 | `sync_github_secrets.py` | Push `.env` values to GitHub Secrets |
 | `export_backup.py` | Table export backup |
 

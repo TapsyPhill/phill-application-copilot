@@ -11,6 +11,7 @@ from urllib.parse import urljoin
 EMAIL_RE = re.compile(r"(?<![\w.+-])([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})(?![\w.-])", re.I)
 MAILTO_RE = re.compile(r"mailto:([A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,})", re.I)
 PHONE_RE = re.compile(r"(?<!\d)(\+?\d[\d\s()./-]{7,}\d)(?!\d)")
+TEL_RE = re.compile(r"(?:tel|phone|mobile|telefon|kontakt|contact)[:\s]+(\+?\d[\d\s()./-]{7,}\d)", re.I)
 URL_RE = re.compile(r"https?://[^\s)>\"]+", re.I)
 
 APPLICATION_WORDS = (
@@ -65,9 +66,9 @@ def extract_application_signals(text: str, source_url: str | None = None) -> dic
         seen.add(key)
         contacts.append(ContactSignal("email", email, _snippet_around(body, match.start(), match.end()), 92.0))
 
-    for match in PHONE_RE.finditer(body):
+    for match in list(TEL_RE.finditer(body)) + list(PHONE_RE.finditer(body)):
         phone = re.sub(r"\s+", " ", match.group(1)).strip()
-        if _looks_like_date_or_id(phone):
+        if _looks_like_noise_phone(phone, _snippet_around(body, match.start(), match.end(), radius=80)):
             continue
         key = ("phone", phone)
         if key in seen:
@@ -117,13 +118,30 @@ def _looks_like_noise_email(email: str) -> bool:
         not local
         or not domain
         or domain.endswith((".png", ".jpg", ".jpeg", ".gif", ".webp"))
+        or domain in {"example.com", "example.edu", "ihre-domain.de"}
         or local in {"example", "email", "your.email", "name"}
+        or local.startswith("user")
     )
 
 
-def _looks_like_date_or_id(value: str) -> bool:
+def _looks_like_noise_phone(value: str, context: str = "") -> bool:
+    compact = value.strip()
     digits = re.sub(r"\D", "", value)
-    return len(digits) < 8 or bool(re.fullmatch(r"20\d{6,}", digits))
+    lower_context = context.lower()
+    if len(digits) < 8:
+        return True
+    if re.fullmatch(r"\d{1,2}[./-]\d{1,2}[./-]\d{2,4}", compact):
+        return True
+    if re.fullmatch(r"\d{1,3}(?:\.\d{1,3}){3}", compact):
+        return True
+    if re.search(r"\d+\s*[-–]\s*\d+", compact) and not compact.startswith("+"):
+        return True
+    if digits in ("0123456789", "123456789", "12345678910"):
+        return True
+    if "€" in context or "salary" in lower_context or "gehalt" in lower_context:
+        return True
+    phone_context = any(word in lower_context for word in ("phone", "mobile", "tel", "telefon", "call", "kontakt", "contact"))
+    return not (compact.startswith("+") or phone_context)
 
 
 def _application_url(text: str, source_url: str | None) -> str | None:
