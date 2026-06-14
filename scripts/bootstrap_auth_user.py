@@ -14,13 +14,13 @@ from backend.app.config.settings import get_settings
 
 
 def main() -> int:
-    email = os.environ.get("BOOTSTRAP_AUTH_EMAIL", "phillmhembere@gmail.com")
-    password = os.environ.get("BOOTSTRAP_AUTH_PASSWORD")
+    s = get_settings()
+    email = os.environ.get("BOOTSTRAP_AUTH_EMAIL") or s.bootstrap_auth_email
+    password = os.environ.get("BOOTSTRAP_AUTH_PASSWORD") or s.bootstrap_auth_password
     if not password:
-        print("ERROR: set BOOTSTRAP_AUTH_PASSWORD in environment (do not commit to git)")
+        print("ERROR: set BOOTSTRAP_AUTH_PASSWORD in .env or environment (do not commit to git)")
         return 1
 
-    s = get_settings()
     if not s.supabase_url or not s.supabase_key_secret:
         print("ERROR: SUPABASE_URL and SUPABASE_SECRET_KEY required")
         return 1
@@ -58,7 +58,6 @@ def main() -> int:
             return 1
 
     print("Enable in Supabase: Authentication → Providers → Email → ON")
-    print("Also set Site URL to https://phill-job-application-copilot.pages.dev")
     return 0
 
 

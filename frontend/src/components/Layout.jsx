@@ -1,5 +1,5 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { supabase } from "../services/supabaseClient";
+import { getSupabaseConfigError, supabase } from "../services/supabaseClient";
 
 const nav = [
   { to: "/", label: "Overview" },
@@ -11,7 +11,7 @@ const nav = [
   { to: "/sources", label: "Sources" },
   { to: "/profile", label: "Profile" },
   { to: "/logs", label: "Logs" },
-  { to: "/settings", label: "Settings" },
+  { to: "/ingest", label: "Manual Ingest" },
 ];
 
 export default function Layout() {
@@ -44,6 +44,9 @@ export default function Layout() {
         </button>
       </aside>
       <main className="main">
+        {getSupabaseConfigError() && (
+          <p className="error-text config-banner">{getSupabaseConfigError()}</p>
+        )}
         <Outlet />
       </main>
     </div>

@@ -10,6 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
+from backend.app.config.settings import get_settings
 from backend.app.db.supabase_repo import SupabaseRepo
 from backend.app.pipeline.ai_runner import AiRunner
 from backend.app.pipeline.dedup_runner import DedupRunner
@@ -20,7 +21,8 @@ logger = logging.getLogger(__name__)
 
 def main() -> int:
     repo = SupabaseRepo.from_settings()
-    processed = AiRunner(repo).run()
+    limit = get_settings().ai_analysis_limit
+    processed = AiRunner(repo, limit=limit).run()
     merged = DedupRunner(repo).run()
     logger.info("ai_analysis_finished", extra={"processed": processed, "merged": merged})
     return 0

@@ -2,30 +2,37 @@ import { supabase } from "./supabaseClient";
 
 export async function recordAction(opportunityId, actionType, payload = {}) {
   if (!supabase) return { error: "Supabase not configured" };
-  await supabase.from("opportunity_user_actions").insert({
+  const { error } = await supabase.from("opportunity_user_actions").insert({
     opportunity_id: opportunityId,
     action_type: actionType,
     action_payload: payload,
   });
+  if (error) return { error: error.message };
+  return { ok: true };
 }
 
 export async function updateOpportunityStatus(opportunityId, status, extra = {}) {
   if (!supabase) return { error: "Supabase not configured" };
-  const { data: existing } = await supabase
+  const { data: existing, error: fetchErr } = await supabase
     .from("opportunities")
     .select("status")
     .eq("id", opportunityId)
     .single();
-  await supabase
+  if (fetchErr) return { error: fetchErr.message };
+
+  const { error: updateErr } = await supabase
     .from("opportunities")
     .update({ status, ...extra })
     .eq("id", opportunityId);
-  await supabase.from("opportunity_status_history").insert({
+  if (updateErr) return { error: updateErr.message };
+
+  const { error: histErr } = await supabase.from("opportunity_status_history").insert({
     opportunity_id: opportunityId,
     old_status: existing?.status,
     new_status: status,
     changed_by: "user",
   });
+  if (histErr) return { error: histErr.message };
   return { ok: true };
 }
 
@@ -38,36 +45,41 @@ export async function markViewed(opportunityId) {
 }
 
 export async function saveOpportunity(opportunityId) {
-  await recordAction(opportunityId, "save");
+  const actionResult = await recordAction(opportunityId, "save");
+  if (actionResult.error) return actionResult;
   return updateOpportunityStatus(opportunityId, "saved");
 }
 
 export async function rejectOpportunity(opportunityId) {
-  await recordAction(opportunityId, "reject");
+  const actionResult = await recordAction(opportunityId, "reject");
+  if (actionResult.error) return actionResult;
   return updateOpportunityStatus(opportunityId, "rejected");
 }
 
 export async function markInterested(opportunityId) {
-  await recordAction(opportunityId, "mark_interested");
+  const actionResult = await recordAction(opportunityId, "mark_interested");
+  if (actionResult.error) return actionResult;
   return updateOpportunityStatus(opportunityId, "saved");
 }
 
 export async function markWrongCategory(opportunityId) {
-  await recordAction(opportunityId, "wrong_category");
+  const actionResult = await recordAction(opportunityId, "wrong_category");
+  if (actionResult.error) return actionResult;
   return updateOpportunityStatus(opportunityId, "manual_review");
 }
 
 export async function markDuplicate(opportunityId) {
-  await recordAction(opportunityId, "mark_duplicate");
+  const actionResult = await recordAction(opportunityId, "mark_duplicate");
+  if (actionResult.error) return actionResult;
   return updateOpportunityStatus(opportunityId, "archived");
 }
 
 export async function addNote(opportunityId, noteText) {
   if (!supabase) return { error: "Supabase not configured" };
-  await supabase.from("opportunity_notes").insert({
+  const { error: noteErr } = await supabase.from("opportunity_notes").insert({
     opportunity_id: opportunityId,
     note_text: noteText,
   });
-  await recordAction(opportunityId, "note", { text: noteText });
-  return { ok: true };
+  if (noteErr) return { error: noteErr.message };
+  return recordAction(opportunityId, "note", { text: noteText });
 }

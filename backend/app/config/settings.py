@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     # Legacy aliases (optional)
     supabase_anon_key: str = ""
     supabase_service_role_key: str = ""
+    bootstrap_auth_email: str = "phillmhembere@gmail.com"
+    bootstrap_auth_password: str = ""
 
     @property
     def supabase_key_public(self) -> str:
@@ -46,6 +48,10 @@ class Settings(BaseSettings):
 
     # Pipeline
     ai_daily_cloud_call_limit: int = 200
+    discovery_max_terms: int = 35
+    discovery_max_sources: int = 60
+    scrape_max_urls: int = 60
+    ai_analysis_limit: int = 40
     chroma_persist_dir: str = "./data/chroma"
     log_level: str = "INFO"
 

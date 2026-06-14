@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams } from "react-router-dom";
 import EvidencePanel from "../components/EvidencePanel";
 import ScoreBadge from "../components/ScoreBadge";
+import ScoreBreakdown from "../components/ScoreBreakdown";
 import Stage2Actions from "../components/Stage2Actions";
 import { useOpportunity } from "../hooks/useOpportunity";
 import {
@@ -16,12 +17,17 @@ import {
 
 export default function OpportunityDetail() {
   const { id } = useParams();
-  const { opp, evidence, loading, error, reload } = useOpportunity(id);
+  const { opp, evidence, scores, loading, error, reload } = useOpportunity(id);
   const [note, setNote] = useState("");
   const [msg, setMsg] = useState("");
 
   async function act(fn) {
-    await fn(id);
+    setMsg("");
+    const result = await fn(id);
+    if (result?.error) {
+      setMsg(`Error: ${result.error}`);
+      return;
+    }
     setMsg("Saved.");
     await reload();
   }
@@ -40,6 +46,10 @@ export default function OpportunityDetail() {
       </p>
       <ScoreBadge score={opp.final_score} />
       <p>{opp.summary}</p>
+      <section>
+        <h3>Score breakdown</h3>
+        <ScoreBreakdown scores={scores} />
+      </section>
       <section>
         <h3>Evidence</h3>
         <EvidencePanel evidence={evidence} />
@@ -77,7 +87,11 @@ export default function OpportunityDetail() {
             type="button"
             onClick={async () => {
               if (!note.trim()) return;
-              await addNote(id, note.trim());
+              const result = await addNote(id, note.trim());
+              if (result?.error) {
+                setMsg(`Error: ${result.error}`);
+                return;
+              }
               setNote("");
               setMsg("Note saved.");
             }}
@@ -85,7 +99,7 @@ export default function OpportunityDetail() {
             Add note
           </button>
         </div>
-        {msg && <p className="muted">{msg}</p>}
+        {msg && <p className={msg.startsWith("Error:") ? "error-text" : "muted"}>{msg}</p>}
         <Stage2Actions />
       </section>
     </div>

@@ -5,6 +5,18 @@ const key = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 export const supabase = url && key ? createClient(url, key) : null;
 
+/** Human-readable config error for UI banners (null when configured). */
+export function getSupabaseConfigError() {
+  if (supabase) return null;
+  if (!url && !key) {
+    return "Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in the repo root .env, then restart the dev server.";
+  }
+  if (!url) {
+    return "Missing VITE_SUPABASE_URL in the repo root .env. Restart the dev server after editing .env.";
+  }
+  return "Missing VITE_SUPABASE_PUBLISHABLE_KEY in the repo root .env. Restart the dev server after editing .env.";
+}
+
 export async function fetchOpportunities(filters = {}) {
   if (!supabase) return { data: [], error: "Supabase not configured" };
   let q = supabase.from("opportunities").select("*").order("final_score", { ascending: false });

@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Apply Stage 1 core schema migration via direct Postgres connection."""
+"""Apply Stage 1 migrations via direct Postgres connection."""
 
 from __future__ import annotations
 
-import re
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
@@ -15,7 +14,8 @@ sys.path.insert(0, str(ROOT))
 
 from backend.app.config.settings import get_settings
 
-MIGRATION = ROOT / "supabase" / "migrations" / "20260525100000_stage1_core_schema.sql"
+MIGRATIONS_DIR = ROOT / "supabase" / "migrations"
+MIGRATION_FILES = sorted(MIGRATIONS_DIR.glob("*.sql"))
 
 
 def db_url_from_settings() -> str:
@@ -27,7 +27,6 @@ def db_url_from_settings() -> str:
         raise ValueError("SUPABASE_DB_PASSWORD required for direct migration apply")
     parsed = urlparse(s.supabase_url)
     host = parsed.hostname or ""
-    # https://abcdefgh.supabase.co -> db.abcdefgh.supabase.co
     project_ref = host.split(".")[0] if host else ""
     if not project_ref:
         raise ValueError(f"Cannot parse project ref from SUPABASE_URL host: {host}")
@@ -38,31 +37,40 @@ def db_url_from_settings() -> str:
     )
 
 
+def apply_migration(cur, path: Path) -> None:
+    sql = path.read_text(encoding="utf-8")
+    cur.execute(sql)
+
+
 def main() -> int:
-    if not MIGRATION.exists():
-        print(f"ERROR: migration not found: {MIGRATION}")
+    if not MIGRATION_FILES:
+        print(f"ERROR: no migrations found in {MIGRATIONS_DIR}")
         return 1
 
-    sql = MIGRATION.read_text(encoding="utf-8")
     conninfo = db_url_from_settings()
-    print(f"Applying migration: {MIGRATION.name}")
     conn = psycopg2.connect(conninfo)
     conn.autocommit = False
+    applied = 0
     try:
         with conn.cursor() as cur:
-            cur.execute(sql)
-        conn.commit()
-        print("Migration applied successfully")
+            for migration in MIGRATION_FILES:
+                print(f"Applying migration: {migration.name}")
+                try:
+                    apply_migration(cur, migration)
+                    conn.commit()
+                    applied += 1
+                    print(f"  OK: {migration.name}")
+                except psycopg2.Error as exc:
+                    conn.rollback()
+                    msg = str(exc)
+                    if "already exists" in msg:
+                        print(f"  SKIP: {migration.name} (objects already exist)")
+                        continue
+                    print(f"  FAILED: {migration.name}: {msg}")
+                    return 1
+        print(f"\nApplied {applied}/{len(MIGRATION_FILES)} migrations")
+        print("Run scripts/check_schema.py to verify tables and RLS.")
         return 0
-    except psycopg2.Error as exc:
-        conn.rollback()
-        msg = str(exc)
-        if "already exists" in msg:
-            print("Migration partially/fully applied (objects already exist).")
-            print("Run scripts/check_schema.py to verify tables.")
-            return 0
-        print(f"Migration failed: {msg}")
-        return 1
     finally:
         conn.close()
 

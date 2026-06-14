@@ -15,24 +15,34 @@ Pipeline: **sources → discover → scrape → clean → quality gate → dedup
 
 ## Deployment (Cloudflare Pages)
 
-Connect the GitHub repo to Cloudflare Pages:
+Connect the GitHub repo to Cloudflare Pages (or rely on the GitHub Actions workflow `cloudflare-deploy.yml`):
 
 | Setting | Value |
 |---------|--------|
 | Production branch | `main` |
-| Root directory | `frontend` |
-| Build command | `npm run build` |
-| Build output | `dist` |
+| Root directory | `/` (repo root) |
+| Build command | `npm ci && npm run build` |
+| Build output | `frontend/dist` |
+| Deploy command | Leave empty for Git integration, or use Pages deploy (not `wrangler deploy`) |
 
 Set environment variables in Cloudflare: `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_PROJECT_DOMAIN`.
 
-Enable **Supabase Auth → Email magic link** and add your Cloudflare URL to redirect allow list.
+Enable **Supabase Auth → Email/password** for the private dashboard user, then bootstrap the login user locally:
+
+```bash
+# Add to .env (never commit real password)
+BOOTSTRAP_AUTH_EMAIL=phillmhembere@gmail.com
+BOOTSTRAP_AUTH_PASSWORD=your-private-password
+python scripts/bootstrap_auth_user.py
+```
+
+See [docs/supabase-auth-setup.md](docs/supabase-auth-setup.md) for details.
 
 Backend pipelines run via **GitHub Actions** (`daily-scrape`, `ai-analysis`, `rag-indexing`, `backup-export`), not on Cloudflare.
 
 **Cloudflare deploy failed with `wrangler deploy`?** See [docs/cloudflare-pages-setup.md](docs/cloudflare-pages-setup.md) — use `frontend/dist` and **Pages**, not Workers deploy.
 
-**GitHub Actions scrape/AI failed?** Add repository secrets (`SUPABASE_URL`, `SUPABASE_SECRET_KEY`, …) then run workflow **Validate Repository Secrets**.
+**GitHub Actions scrape/AI failed?** From repo root with `.env` filled, run `python scripts/sync_github_secrets.py`, then workflow **Validate Repository Secrets**. Full local smoke: `python scripts/run_stage1_smoke.py`.
 
 ## Quick start
 
@@ -40,25 +50,35 @@ Backend pipelines run via **GitHub Actions** (`daily-scrape`, `ai-analysis`, `ra
 # Environment
 cp .env.example .env
 # Fill Supabase, AI, and scraper keys locally only
+# Frontend reads VITE_* from repo root .env (not frontend/.env)
 
 # Backend
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python scripts/health_check.py
 python scripts/seed_sources.py
+python scripts/seed_search_terms.py
+python scripts/seed_profile.py
 
-# Frontend (reads VITE_* from repo root .env)
-npm run install:frontend
+# Auth user (required for dashboard login)
+python scripts/bootstrap_auth_user.py
+
+# Frontend
+npm ci
 npm run dev
 # Open http://localhost:5173 — restart dev server after editing .env
 ```
 
-Apply database schema:
+Apply database schema (all migrations, in order):
 
 ```bash
-# Supabase SQL editor or CLI
-supabase db push   # or run supabase/migrations/20260525100000_stage1_core_schema.sql
+# Option A: Supabase SQL editor — run each file in supabase/migrations/
+# Option B: direct Postgres apply (needs SUPABASE_DB_PASSWORD in .env)
+python scripts/apply_migration.py
+python scripts/check_schema.py
 ```
+
+Pipeline tuning vars (`DISCOVERY_MAX_TERMS`, `SCRAPE_MAX_URLS`, `AI_ANALYSIS_LIMIT`, etc.) are loaded from `.env` via `backend/app/config/settings.py`.
 
 ## Repository layout
 

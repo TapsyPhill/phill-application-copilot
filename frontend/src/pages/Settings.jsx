@@ -24,10 +24,12 @@ export default function Settings() {
 
   return (
     <div>
-      <h2>Settings</h2>
-      <p className="muted">Domain: {import.meta.env.VITE_PROJECT_DOMAIN || "not set"}</p>
+      <h2>Manual Ingest</h2>
+      <p className="muted">
+        Add a specific opportunity URL when you find one outside the automatic discovery pipeline.
+      </p>
       <section>
-        <h3>Manual URL ingest</h3>
+        <h3>Queue a URL for scraping</h3>
         <form onSubmit={ingestUrl} className="note-row">
           <input
             type="url"
@@ -39,6 +41,9 @@ export default function Settings() {
           <button type="submit">Queue URL</button>
         </form>
         {msg && <p className="muted">{msg}</p>}
+        <p className="muted small">
+          Queued links are scraped during the next pipeline run, then cleaned, classified, scored, and shown in the right dashboard section.
+        </p>
       </section>
     </div>
   );

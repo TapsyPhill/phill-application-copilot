@@ -28,7 +28,7 @@ class VotingEngine:
         top_cat, cat_votes = cat_counter.most_common(1)[0]
         top_status, _ = status_counter.most_common(1)[0]
         agreement = cat_votes / len(model_outputs)
-        avg_conf = sum(o.get("confidence", 0) for o in model_outputs) / len(model_outputs)
+        avg_conf = sum(float(o.get("confidence") or 0) for o in model_outputs) / len(model_outputs)
 
         needs_manual = agreement < 0.67 or avg_conf < 50
         if agreement == 1.0:

@@ -225,11 +225,11 @@ phill-job-application-copilot/
 | **DNS** | `PROJECT_DOMAIN` / `phill-application-copilot.uk` |
 | **API token** | `CLOUDFLARE_API_TOKEN` for `wrangler-action` deploy |
 
-### Deploy pipeline (`deploy-frontend.yml`)
+### Deploy pipeline (`cloudflare-deploy.yml`)
 
-1. Checkout → Node 20 → `npm ci` in `frontend/`.
+1. Checkout → Node 20 → `npm ci` at repo root.
 2. `npm run build` with `VITE_SUPABASE_*` injected from GitHub Secrets.
-3. `wrangler pages deploy dist --project-name=phill-application-copilot`.
+3. `wrangler pages deploy frontend/dist --project-name=phill-job-application-copilot`.
 
 **Why Cloudflare Pages:** Static SPA, global CDN, free tier suitable for personal command center; pairs with GitHub push-to-deploy.
 
@@ -241,8 +241,10 @@ phill-job-application-copilot/
 |----------|---------|---------|
 | `daily-scrape.yml` | `0 7 * * *` + manual | Seed + scrape |
 | `ai-analysis.yml` | `30 8 * * *` + manual | Classify + score |
-| `deploy-frontend.yml` | push `main` | Cloudflare Pages |
-| `stage-1-placeholder.yml` | — | Reserved for rag-indexing, backup-export |
+| `cloudflare-deploy.yml` | push `main` | Cloudflare Pages |
+| `rag-indexing.yml` | scheduled + manual | Vector indexing |
+| `backup-export.yml` | scheduled + manual | Table export backup |
+| `validate-secrets.yml` | scheduled + manual | Secret presence check |
 
 **Secret inventory (Actions):** See `docs/api-keys.md`. Never echo secrets in logs.
 

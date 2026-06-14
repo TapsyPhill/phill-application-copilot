@@ -28,9 +28,9 @@ Store sensitive values in **GitHub repository secrets** (Settings → Secrets an
 | Setting | Value |
 |--------|--------|
 | Framework preset | Vite |
-| Build command | `npm run build` |
-| Build output directory | `dist` |
-| Root directory | `frontend` |
+| Build command | `npm ci && npm run build` |
+| Build output directory | `frontend/dist` |
+| Root directory | `/` (repo root) |
 | Production branch | `main` |
 
 Deployment is handled by **Cloudflare Pages Git integration**, not Wrangler CLI.

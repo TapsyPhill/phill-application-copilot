@@ -1,19 +1,20 @@
 # Cloudflare Pages — fix deploy error
 
-## Why Cloudflare build history shows old commits (814e62d, b14a307)
+## Why Cloudflare build history may show old commits
 
-Your **Workers** Git integration was building an old layout and running `wrangler deploy` **without** `frontend/dist` assets. GitHub `main` now has the full dashboard (`a1cafcc+`), but Cloudflare did not rebuild it correctly.
+Your **Workers** Git integration may have been building an old layout and running `wrangler deploy` **without** `frontend/dist` assets. GitHub `main` now has the full dashboard, but Cloudflare may not rebuild it correctly until settings are fixed.
 
 **Fix in Cloudflare dashboard** → `phill-job-application-copilot` → **Settings** → **Build**:
 
 | Setting | Value |
 |---------|--------|
 | Production branch | `main` |
+| Root directory | `/` (repo root) |
 | Build command | `npm ci && npm run build` |
-| **Remove** | `npx wrangler deploy` alone (or replace deploy with below) |
-| Deploy command | `npm run build && npx wrangler deploy -c wrangler.worker.toml` |
+| Build output directory | `frontend/dist` |
+| Deploy command | Leave **empty** (Git integration deploys static assets automatically) |
 
-Or use **GitHub Actions** workflow `Deploy to Cloudflare` (adds `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `VITE_*` secrets).
+Or use **GitHub Actions** workflow `cloudflare-deploy.yml` (requires `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, and `VITE_*` secrets).
 
 **Environment variables** (Cloudflare build + Pages):
 
@@ -62,7 +63,7 @@ npm ci && npm run build && npx wrangler pages deploy frontend/dist --project-nam
 |------|---------|
 | `VITE_SUPABASE_URL` | `https://xxxx.supabase.co` |
 | `VITE_SUPABASE_PUBLISHABLE_KEY` | `eyJ...` (anon/publishable only) |
-| `VITE_PROJECT_DOMAIN` | `phill-application-copilot.uk` |
+| `VITE_PROJECT_DOMAIN` | `phill-job-application-copilot.pages.dev` |
 
 Never put `SUPABASE_SECRET_KEY` or AI keys in Cloudflare (frontend is public).
 

@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Check whether Stage 1 core tables exist in Supabase."""
+"""Check whether Stage 1 core and pipeline tables exist in Supabase."""
 
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
@@ -25,6 +24,19 @@ CORE_TABLES = [
     "opportunity_evidence",
     "source_categories",
 ]
+
+PIPELINE_TABLES = [
+    "audit_logs",
+    "api_usage_logs",
+    "opportunity_ai_analysis",
+    "opportunity_scores",
+    "opportunity_user_actions",
+    "opportunity_status_history",
+    "opportunity_notes",
+    "opportunity_votes",
+]
+
+ALL_TABLES = CORE_TABLES + PIPELINE_TABLES
 
 
 def _headers(key: str) -> dict[str, str]:
@@ -61,7 +73,7 @@ def main() -> int:
 
     missing: list[str] = []
     with httpx.Client(timeout=30.0) as client:
-        for table in CORE_TABLES:
+        for table in ALL_TABLES:
             try:
                 ok = table_exists(client, url, table, key)
             except Exception as exc:
@@ -74,8 +86,10 @@ def main() -> int:
 
     if missing:
         print(f"\nSchema incomplete — missing: {', '.join(missing)}")
+        print("Apply all files in supabase/migrations/ in order, or run:")
+        print("  python scripts/apply_migration.py")
         return 2
-    print("\nSchema OK — all core tables present")
+    print("\nSchema OK — all core and pipeline tables present")
     return 0
 
 

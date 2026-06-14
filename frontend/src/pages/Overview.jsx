@@ -1,13 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "../services/supabaseClient";
+import { getSupabaseConfigError, supabase } from "../services/supabaseClient";
 
 export default function Overview() {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(getSupabaseConfigError());
 
   useEffect(() => {
-    if (!supabase) {
+    const configError = getSupabaseConfigError();
+    if (configError) {
+      setError(configError);
       setLoading(false);
       return;
     }
@@ -24,9 +27,25 @@ export default function Overview() {
           active(supabase.from("opportunities").select("id", { count: "exact", head: true })).eq("category", "job"),
           active(supabase.from("opportunities").select("id", { count: "exact", head: true })).eq("category", "remote_job"),
         ]);
-        const { count: newToday } = await active(
+        const { count: newToday, error: newTodayErr } = await active(
           supabase.from("opportunities").select("id", { count: "exact", head: true }),
         ).gte("first_seen_at", `${today}T00:00:00`);
+
+        const queryError =
+          all.error?.message ||
+          high.error?.message ||
+          review.error?.message ||
+          client.error?.message ||
+          phd.error?.message ||
+          jobs.error?.message ||
+          remote.error?.message ||
+          newTodayErr?.message ||
+          null;
+        if (queryError) {
+          setError(queryError);
+          setMetrics(null);
+          return;
+        }
 
         setMetrics({
           total: all.count ?? 0,
@@ -62,6 +81,7 @@ export default function Overview() {
     <div>
       <h2>Overview</h2>
       <p className="muted">Daily intelligence dashboard — live from Supabase.</p>
+      {error && <p className="error-text">{error}</p>}
       {loading && <p className="muted">Loading metrics…</p>}
       <div className="metrics-grid">
         {cards.map((m) => (

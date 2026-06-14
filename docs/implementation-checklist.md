@@ -65,7 +65,7 @@ Use this checklist to track delivery of **phill-job-application-copilot** (Oppor
 - [ ] `ai-analysis.yml` processes new cleaned posts
 - [ ] `rag-indexing.yml` updates embeddings
 - [ ] `backup-export.yml` exports tables
-- [ ] `deploy-frontend.yml` deploys on push to main
+- [ ] `cloudflare-deploy.yml` deploys on push to main
 - [ ] `scripts/health_check.py` passes
 
 ## Safeguards verified

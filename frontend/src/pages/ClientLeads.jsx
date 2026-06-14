@@ -45,8 +45,8 @@ export default function ClientLeads() {
       {error && <p className="error-text">{String(error)}</p>}
       {!loading && filtered.length === 0 && (
         <div className="empty-state">
-          No leads in this filter yet. Try <strong>All</strong>, or run{" "}
-          <code>python scripts/run_daily_scrape.py</code> after seeding sources.
+          No leads in this filter yet. Try <strong>All</strong>, or add a known lead through{" "}
+          <strong>Manual Ingest</strong> while the automatic pipeline keeps collecting.
         </div>
       )}
       <div className="card-list">

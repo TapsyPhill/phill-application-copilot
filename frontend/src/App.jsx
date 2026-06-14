@@ -31,7 +31,8 @@ export default function App() {
             <Route path="profile" element={<ProfileKnowledge />} />
             <Route path="review" element={<ReviewQueue />} />
             <Route path="logs" element={<LogsHealth />} />
-            <Route path="settings" element={<Settings />} />
+            <Route path="ingest" element={<Settings />} />
+            <Route path="settings" element={<Navigate to="/ingest" replace />} />
           </Route>
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -15,6 +15,10 @@ from backend.app.deduplication.url_deduper import url_hash as compute_url_hash
 logger = structlog.get_logger(__name__)
 
 
+def _utc_day_start_iso() -> str:
+    return datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+
+
 class SupabaseRepo:
     def __init__(self, client: Client) -> None:
         self._client = client
@@ -297,7 +301,7 @@ class SupabaseRepo:
 
     def count_opportunities_today(self) -> int:
         r = self._client.table("opportunities").select("id", count="exact").gte(
-            "first_seen_at", "today"
+            "first_seen_at", _utc_day_start_iso()
         ).execute()
         return r.count or 0
 
@@ -305,7 +309,7 @@ class SupabaseRepo:
         r = (
             self._client.table("api_usage_logs")
             .select("id", count="exact")
-            .gte("created_at", "today")
+            .gte("created_at", _utc_day_start_iso())
             .in_("service_name", ["gemini", "groq", "openai", "anthropic"])
             .execute()
         )

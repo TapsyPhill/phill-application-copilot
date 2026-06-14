@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import structlog
 
 from backend.app.db.supabase_repo import SupabaseRepo
@@ -52,6 +54,41 @@ class DedupRunner:
                 ).execute()
                 merged += 1
 
+        by_title: dict[tuple[str, str], list[dict]] = {}
+        for o in opps:
+            status = o.get("status")
+            if status in ("archived", "rejected"):
+                continue
+            key = (o.get("category") or "", _normalize_title(o.get("title") or ""))
+            if key[1]:
+                by_title.setdefault(key, []).append(o)
+
+        for _key, group in by_title.items():
+            if len(group) < 2:
+                continue
+            group.sort(key=lambda x: x.get("final_score") or 0, reverse=True)
+            primary, *dupes = group
+            for dup in dupes:
+                payload = self._merge.build_update_payload(primary, dup, "normalized_title")
+                self._repo._client.table("opportunities").update(payload).eq("id", primary["id"]).execute()
+                self._repo._client.table("opportunities").update({"status": "archived"}).eq("id", dup["id"]).execute()
+                self._repo._client.table("opportunity_duplicates").insert(
+                    {
+                        "primary_opportunity_id": primary["id"],
+                        "duplicate_opportunity_id": dup["id"],
+                        "match_type": "normalized_title",
+                        "similarity_score": 0.98,
+                    }
+                ).execute()
+                merged += 1
+
         self._repo.audit("dedup_complete", details={"merged": merged})
         logger.info("dedup_complete", merged=merged)
         return merged
+
+
+def _normalize_title(title: str) -> str:
+    title = title.lower()
+    title = re.sub(r"\b(june|july|august|september|october|november|december)\s+\d{4}\b", "", title)
+    title = re.sub(r"[^a-z0-9]+", " ", title)
+    return re.sub(r"\s+", " ", title).strip()

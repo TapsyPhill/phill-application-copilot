@@ -1,31 +1,9 @@
-# Supabase Auth — fix localhost redirect & login
+# Supabase Auth — email/password login
 
-## Why magic links open `localhost:3000`
+## Dashboard login mode
 
-Supabase builds confirmation links from **Authentication → URL Configuration → Site URL**.
-
-If Site URL is `http://localhost:3000`, every email link goes there — even when you use Cloudflare.
-
-### Fix in Supabase (required)
-
-1. Open **Authentication → URL Configuration**
-2. Set **Site URL** to:
-
-   ```
-   https://phill-job-application-copilot.pages.dev
-   ```
-
-3. **Redirect URLs** — add all of these:
-
-   ```
-   https://phill-job-application-copilot.pages.dev/**
-   http://localhost:5173/**
-   http://localhost:3000/**
-   ```
-
-4. Save.
-
-5. Request a **new** magic link (old links stay invalid — explains `403 Email link is invalid or expired`).
+Stage 1 uses a private Supabase Auth dashboard with **email/password only**.
+The login page keeps the dashboard email pre-filled. Password changes are handled locally with `scripts/bootstrap_auth_user.py`.
 
 ### Cloudflare env vars
 
@@ -34,26 +12,36 @@ Set on Cloudflare Pages (and GitHub Secrets for deploy):
 | Variable | Example |
 |----------|---------|
 | `VITE_PROJECT_DOMAIN` | `phill-job-application-copilot.pages.dev` |
-| `VITE_AUTH_REDIRECT_URL` | `https://phill-job-application-copilot.pages.dev/` (optional override) |
 
 Redeploy after changing env vars.
 
 ---
 
-## Temporary email + password login
-
-Until magic links are fully configured, use **Email & password** on the login page.
+## Create or update the password user
 
 ### Create the user (one time, local)
 
+Add these to local `.env` only, then run the script:
+
+```bash
+BOOTSTRAP_AUTH_EMAIL=phillmhembere@gmail.com
+BOOTSTRAP_AUTH_PASSWORD=your-private-password
+```
+
 ```bash
 source .venv/bin/activate
-export BOOTSTRAP_AUTH_EMAIL=phillmhembere@gmail.com
-export BOOTSTRAP_AUTH_PASSWORD='your-password-here'
 python scripts/bootstrap_auth_user.py
 ```
 
 Do **not** commit the password to git.
+
+### Lost password
+
+Set a new `BOOTSTRAP_AUTH_PASSWORD` in local `.env` and rerun:
+
+```bash
+python scripts/bootstrap_auth_user.py
+```
 
 ### Supabase provider settings
 
@@ -67,4 +55,4 @@ Do **not** commit the password to git.
 
 ## Postgres log: `schema_migrations does not exist`
 
-Harmless for this app if you applied SQL manually. Optional: run `supabase db push` or ignore if tables already exist (`scripts/check_schema.py` passes).
+Harmless for this app if you applied SQL manually. Apply all migrations with `python scripts/apply_migration.py`, then verify with `python scripts/check_schema.py`.
