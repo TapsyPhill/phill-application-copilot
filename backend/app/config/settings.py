@@ -48,7 +48,7 @@ class Settings(BaseSettings):
 
     # Pipeline
     ai_daily_cloud_call_limit: int = 200
-    discovery_max_terms: int = 35
+    discovery_max_terms: int = 60
     discovery_max_sources: int = 60
     scrape_max_urls: int = 60
     ai_analysis_limit: int = 40

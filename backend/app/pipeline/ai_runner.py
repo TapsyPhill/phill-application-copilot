@@ -112,7 +112,7 @@ class AiRunner:
                 )
                 processed += 1
                 continue
-            opp_payload, details, breakdown = build_opportunity_payload(
+            opp_payload, details, breakdown, contacts = build_opportunity_payload(
                 vote.final_category,
                 vote.final_status,
                 vote.confidence,
@@ -124,6 +124,7 @@ class AiRunner:
             oid = row["id"]
 
             self._repo.insert_evidence_rows(oid, primary.get("evidence") or [], primary.get("model_name", "ai"))
+            self._repo.replace_opportunity_contacts(oid, contacts)
             self._repo.insert_score_row(oid, score_to_row(breakdown))
             self._repo.upsert_category_details(vote.final_category, oid, details)
 
@@ -152,6 +153,18 @@ class AiRunner:
 
 def _looks_like_generic_listing(model_data: dict[str, Any], post: dict[str, Any]) -> bool:
     """Reject search/category/marketing pages that are not individual opportunities."""
+    url = str(post.get("source_url") or "").lower()
+    if model_data.get("category") == "phd" and any(
+        domain in url
+        for domain in (
+            "findaphd.com",
+            "jobs.ac.uk",
+            "academicpositions.com",
+            "euraxess.ec.europa.eu",
+            "scholarshipdb.net",
+        )
+    ):
+        return False
     text = " ".join(
         str(x or "")
         for x in (
@@ -177,7 +190,6 @@ def _looks_like_generic_listing(model_data: dict[str, Any], post: dict[str, Any]
     )
     if any(marker in text for marker in generic_markers):
         return True
-    url = str(post.get("source_url") or "").lower()
     if "/remote-jobs/o-" in url or "/api/" in url:
         return True
     return False

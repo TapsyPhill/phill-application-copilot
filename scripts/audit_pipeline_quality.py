@@ -126,7 +126,7 @@ def main() -> int:
     opp_samples = _sample(
         c,
         "opportunities",
-        "id,title,category,subcategory,status,final_score,country,source_url,viewed,created_at",
+        "id,title,category,subcategory,status,final_score,country,source_url,viewed,contact_email,deadline,application_method,application_status,created_at",
         limit=50,
         order="created_at",
     )
@@ -134,6 +134,9 @@ def main() -> int:
     by_status = Counter(o.get("status") or "unknown" for o in opp_samples)
     with_score = sum(1 for o in opp_samples if (o.get("final_score") or 0) > 0)
     with_url = sum(1 for o in opp_samples if (o.get("source_url") or "").startswith("http"))
+    with_email = sum(1 for o in opp_samples if o.get("contact_email"))
+    with_deadline = sum(1 for o in opp_samples if o.get("deadline"))
+    email_apply = sum(1 for o in opp_samples if (o.get("application_method") or "").lower() == "email")
     rejected = by_status.get("rejected", 0)
     report["opportunities"] = {
         "total": opp_total,
@@ -141,6 +144,9 @@ def main() -> int:
         "by_status_in_sample": dict(by_status),
         "sample_with_score": with_score,
         "sample_with_source_url": with_url,
+        "sample_with_contact_email": with_email,
+        "sample_with_deadline": with_deadline,
+        "sample_email_apply": email_apply,
         "rejected_in_sample": rejected,
     }
     if opp_total == 0:
@@ -148,9 +154,12 @@ def main() -> int:
 
     # --- Evidence ---
     ev_total = _count(c, "opportunity_evidence")
-    report["evidence"] = {"total": ev_total}
+    contact_total = _count(c, "opportunity_contacts")
+    report["evidence"] = {"total": ev_total, "contacts": contact_total}
     if opp_total > 0 and ev_total == 0:
         issues.append("Opportunities exist but no evidence rows")
+    if opp_total > 0 and contact_total == 0:
+        issues.append("Opportunities exist but no extracted contact rows")
 
     # --- Profile ---
     profile_chunks = _count(c, "profile_knowledge_chunks")
@@ -196,6 +205,8 @@ def _score_stage1(report: dict, issues: list) -> int:
     if report["opportunities"]["total"] == 0:
         score -= 2
     if report["evidence"]["total"] == 0 and report["opportunities"]["total"] > 0:
+        score -= 1
+    if report["evidence"].get("contacts", 0) == 0 and report["opportunities"]["total"] > 0:
         score -= 1
     if report["profile"]["skills"] == 0:
         score -= 1

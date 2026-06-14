@@ -15,7 +15,7 @@ export default function PhdOpportunities() {
     if (tab === "Funded") {
       rows = rows.filter(
         (o) =>
-          (o.funding_status || "").toLowerCase().includes("fund") ||
+          (o.phd_opportunity_details?.funding_status || "").toLowerCase().match(/fund|scholarship|salaried/) ||
           (o.summary || "").toLowerCase().match(/funded|stipend|scholarship/),
       );
     }

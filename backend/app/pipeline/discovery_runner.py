@@ -55,9 +55,10 @@ class DiscoveryRunner:
             source_id = src.get("id")
             base_domain = (src.get("base_domain") or "").strip()
             main_url = (src.get("url") or "").strip()
-            # Search/listing pages are useful for extracting links, but should not
-            # become opportunities themselves.
-            if main_url and not src.get("allows_search"):
+            # PhD portals are scarce enough that their listing/search pages are
+            # worth scraping even when they also allow search.
+            seed_main_url = not src.get("allows_search") or src.get("target_section") == "phd"
+            if main_url and seed_main_url:
                 self._repo.upsert_discovered_url(
                     main_url,
                     source_id=source_id,
@@ -100,8 +101,8 @@ class DiscoveryRunner:
 
     def _discover_from_tavily(self) -> int:
         count = 0
-        terms = self._collect_terms()
-        for item in terms[: self._max_terms]:
+        terms = self._select_terms_by_section(self._collect_terms())
+        for item in terms:
             query = self._query_for_term(item)
             links = self._tavily.search(query, max_results=8)
             self._repo.log_api_usage(
@@ -130,7 +131,7 @@ class DiscoveryRunner:
         if section == "client_lead":
             return f'{item.term} ("gesucht" OR "looking for" OR "need help" OR "freelance")'
         if section == "phd":
-            return f'{item.term} ("PhD position" OR "doctoral researcher" OR "fully funded")'
+            return f'{item.term} ("PhD position" OR "doctoral researcher" OR "fully funded" OR "application by email")'
         if section == "job":
             return f'{item.term} ("job" OR "career" OR "hiring")'
         if section == "remote_job":
@@ -152,6 +153,36 @@ class DiscoveryRunner:
         if not terms and section in defaults:
             terms = defaults[section]
         return list(dict.fromkeys(terms))
+
+    def _select_terms_by_section(self, terms: list[SearchTerm]) -> list[SearchTerm]:
+        """Reserve search budget per section so PhD terms are not starved."""
+        if len(terms) <= self._max_terms:
+            return terms
+
+        buckets: dict[str, list[SearchTerm]] = {}
+        for term in terms:
+            section = term.target_section or "general"
+            buckets.setdefault(section, []).append(term)
+
+        selected: list[SearchTerm] = []
+        preferred_sections = ("phd", "job", "remote_job", "client_lead", "general")
+        base_quota = max(3, self._max_terms // max(1, len([s for s in preferred_sections if buckets.get(s)])))
+        for section in preferred_sections:
+            if len(selected) >= self._max_terms:
+                break
+            for term in buckets.get(section, [])[:base_quota]:
+                if term not in selected:
+                    selected.append(term)
+                    if len(selected) >= self._max_terms:
+                        break
+
+        if len(selected) < self._max_terms:
+            for term in terms:
+                if term not in selected:
+                    selected.append(term)
+                    if len(selected) >= self._max_terms:
+                        break
+        return selected
 
     def _collect_terms(self) -> list[SearchTerm]:
         db_terms = [

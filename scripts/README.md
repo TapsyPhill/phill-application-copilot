@@ -10,6 +10,7 @@
 | `seed_search_terms.py` | Load search terms for Tavily discovery |
 | `seed_profile.py` | Seed user profile for AI relevance scoring |
 | `run_daily_scrape.py` | Discovery + scrape + clean + dedup pipeline |
+| `run_opportunity_round.py` | Full current-time round: discovery, scrape, clean, dedup, AI, audit |
 | `run_cleaning_pipeline.py` | Raw → cleaned posts |
 | `run_deduplication.py` | Merge duplicates |
 | `run_ai_analysis.py` | AI + voting + opportunities |

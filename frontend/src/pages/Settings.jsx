@@ -45,6 +45,16 @@ export default function Settings() {
           Queued links are scraped during the next pipeline run, then cleaned, classified, scored, and shown in the right dashboard section.
         </p>
       </section>
+      <section className="application-panel">
+        <h3>Run a fresh round now</h3>
+        <p className="muted">
+          To immediately run discovery, scraping, cleaning, deduplication, AI analysis, and scoring from this machine:
+        </p>
+        <code>python scripts/run_opportunity_round.py</code>
+        <p className="muted small">
+          In GitHub Actions, run the <strong>Daily Scrape</strong> workflow manually. It now executes the full round, not just scraping.
+        </p>
+      </section>
     </div>
   );
 }

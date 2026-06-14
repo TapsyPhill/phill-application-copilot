@@ -38,11 +38,13 @@ python scripts/bootstrap_auth_user.py
 
 See [docs/supabase-auth-setup.md](docs/supabase-auth-setup.md) for details.
 
-Backend pipelines run via **GitHub Actions** (`daily-scrape`, `ai-analysis`, `rag-indexing`, `backup-export`), not on Cloudflare.
+Backend pipelines run via **GitHub Actions** (`daily-scrape`, `ai-analysis`, `rag-indexing`, `backup-export`), not on Cloudflare. The `daily-scrape` workflow runs the full morning round: discover, scrape, clean, dedupe, AI classify, score, and audit.
 
 **Cloudflare deploy failed with `wrangler deploy`?** See [docs/cloudflare-pages-setup.md](docs/cloudflare-pages-setup.md) — use `frontend/dist` and **Pages**, not Workers deploy.
 
 **GitHub Actions scrape/AI failed?** From repo root with `.env` filled, run `python scripts/sync_github_secrets.py`, then workflow **Validate Repository Secrets**. Full local smoke: `python scripts/run_stage1_smoke.py`.
+
+**Want a fresh selection round now?** Run `python scripts/run_opportunity_round.py` locally, or manually dispatch the **Daily Scrape** workflow in GitHub Actions.
 
 ## Quick start
 

@@ -19,9 +19,15 @@ export function getSupabaseConfigError() {
 
 export async function fetchOpportunities(filters = {}) {
   if (!supabase) return { data: [], error: "Supabase not configured" };
-  let q = supabase.from("opportunities").select("*").order("final_score", { ascending: false });
+  const detailSelect =
+    filters.category === "phd"
+      ? "*, phd_opportunity_details(*)"
+      : filters.category === "job"
+        ? "*, job_opportunity_details(*)"
+        : "*";
+  let q = supabase.from("opportunities").select(detailSelect).order("final_score", { ascending: false });
   if (!filters.includeInactive) {
-    q = q.neq("status", "rejected").neq("status", "archived").neq("status", "not_recommended");
+    q = q.neq("status", "rejected").neq("status", "archived").neq("status", "checked_out").neq("status", "not_recommended");
   }
   if (filters.category) q = q.eq("category", filters.category);
   if (filters.subcategory) q = q.eq("subcategory", filters.subcategory);

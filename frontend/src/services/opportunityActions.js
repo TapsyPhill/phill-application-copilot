@@ -37,6 +37,18 @@ export async function updateOpportunityStatus(opportunityId, status, extra = {})
 }
 
 export async function markViewed(opportunityId) {
+  const actionResult = await recordAction(opportunityId, "mark_viewed");
+  if (actionResult.error) return actionResult;
+  return updateOpportunityStatus(opportunityId, "reviewing", {
+    viewed: true,
+    viewed_at: new Date().toISOString(),
+    last_opened_at: new Date().toISOString(),
+  });
+}
+
+export async function markReviewed(opportunityId) {
+  const actionResult = await recordAction(opportunityId, "mark_reviewed");
+  if (actionResult.error) return actionResult;
   return updateOpportunityStatus(opportunityId, "reviewing", {
     viewed: true,
     viewed_at: new Date().toISOString(),
@@ -72,6 +84,32 @@ export async function markDuplicate(opportunityId) {
   const actionResult = await recordAction(opportunityId, "mark_duplicate");
   if (actionResult.error) return actionResult;
   return updateOpportunityStatus(opportunityId, "archived");
+}
+
+export async function approveForApplication(opportunityId) {
+  const actionResult = await recordAction(opportunityId, "approve_for_application");
+  if (actionResult.error) return actionResult;
+  return updateOpportunityStatus(opportunityId, "stage2_ready", {
+    approved_for_application: true,
+    stage2_ready: true,
+    application_status: "draft",
+  });
+}
+
+export async function markApplied(opportunityId) {
+  const actionResult = await recordAction(opportunityId, "mark_applied");
+  if (actionResult.error) return actionResult;
+  return updateOpportunityStatus(opportunityId, "stage2_ready", {
+    approved_for_application: true,
+    stage2_ready: true,
+    application_status: "submitted",
+  });
+}
+
+export async function checkOutOpportunity(opportunityId) {
+  const actionResult = await recordAction(opportunityId, "check_out");
+  if (actionResult.error) return actionResult;
+  return updateOpportunityStatus(opportunityId, "checked_out");
 }
 
 export async function addNote(opportunityId, noteText) {

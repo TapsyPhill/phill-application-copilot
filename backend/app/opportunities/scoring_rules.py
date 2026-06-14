@@ -27,7 +27,7 @@ class ScoringRules:
 
     def score_client_lead(self, data: dict[str, Any]) -> ScoreBreakdown:
         b = ScoreBreakdown()
-        if data.get("contact_email") or data.get("contact_phone"):
+        if data.get("contact_email") or data.get("contact_phone") or data.get("email_found") or data.get("phone_found"):
             b.contact_score = 90
         elif data.get("contact_form_url"):
             b.contact_score = 60
@@ -52,10 +52,14 @@ class ScoringRules:
             b.profile_match_score = 15
         else:
             b.profile_match_score = 40
-        if data.get("email_application_possible") == "yes":
+        if data.get("email_application_possible") == "yes" or data.get("email_found") or data.get("contact_email"):
             b.application_method_score = 90
+            b.contact_score = 85
+        elif data.get("application_url"):
+            b.application_method_score = 65
         b.country_score = 85 if (data.get("country") in ("Germany", "EU", "Canada", "New Zealand", "Scotland")) else 60
         b.evidence_score = 80 if data.get("funding_proof") else 35
+        b.urgency_score = data.get("urgency_score") or 0
         return self._finalize(b)
 
     def score_job(self, data: dict[str, Any]) -> ScoreBreakdown:
@@ -68,9 +72,13 @@ class ScoringRules:
         langs = str(data.get("language_requirements", "")).lower()
         if "native german" in langs or "c2" in langs or "c1 german" in langs:
             b.profile_match_score *= 0.6
-        if data.get("email_application_possible") == "yes":
+        if data.get("email_application_possible") == "yes" or data.get("email_found") or data.get("contact_email"):
             b.application_method_score = 88
+            b.contact_score = 85
+        elif data.get("application_url"):
+            b.application_method_score = 65
         b.evidence_score = data.get("evidence_quality_score") or 55
+        b.urgency_score = data.get("urgency_score") or 0
         return self._finalize(b)
 
     def score_remote_job(self, data: dict[str, Any]) -> ScoreBreakdown:

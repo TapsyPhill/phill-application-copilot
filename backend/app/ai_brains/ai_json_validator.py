@@ -17,6 +17,17 @@ REQUIRED_FIELDS = (
 )
 
 RELEVANT_CATEGORIES = frozenset({"client_lead", "phd", "job", "remote_job"})
+OPTIONAL_DEFAULTS = {
+    "application_method": "unknown",
+    "contact_method": "unknown",
+    "email_found": None,
+    "phone_found": None,
+    "application_url": None,
+    "deadline": None,
+    "posted_date": None,
+    "required_documents": [],
+    "application_instructions": None,
+}
 
 
 def parse_and_validate(raw: str) -> tuple[dict[str, Any] | None, str | None]:
@@ -31,10 +42,15 @@ def parse_and_validate(raw: str) -> tuple[dict[str, Any] | None, str | None]:
     if missing:
         return None, f"missing_fields: {','.join(missing)}"
     evidence = data.get("evidence")
-    evidence = data.get("evidence")
     if not evidence or (isinstance(evidence, list) and len(evidence) == 0):
         if (data.get("confidence") or 0) > 70:
             data["confidence"] = 45
+    for key, default in OPTIONAL_DEFAULTS.items():
+        data.setdefault(key, default)
+    if data.get("application_method") == "email" and not data.get("email_found"):
+        data["application_method"] = "unknown"
+        if (data.get("confidence") or 0) > 65:
+            data["confidence"] = 65
     cat = str(data.get("category") or "").strip()
     relevant = data.get("is_relevant")
     if relevant is True and cat not in RELEVANT_CATEGORIES:

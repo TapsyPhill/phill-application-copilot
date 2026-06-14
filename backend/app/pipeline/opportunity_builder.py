@@ -8,6 +8,7 @@ from datetime import date
 from typing import Any
 
 from backend.app.deduplication.url_deduper import url_hash
+from backend.app.ingestion.contact_extractor import extract_application_signals
 from backend.app.opportunities.scoring_rules import ScoreBreakdown, ScoringRules
 
 
@@ -23,7 +24,9 @@ def build_opportunity_payload(
     uh = cleaned_post.get("url_hash") or url_hash(source_url)
     ch = cleaned_post.get("content_hash")
     rules = ScoringRules()
-    data = {**model_data, "evidence_quality_score": _evidence_score(model_data)}
+    extracted = extract_application_signals(cleaned_post.get("body_text") or "", source_url)
+    model_data = _merge_application_signals(model_data, extracted)
+    data = _scoring_data(model_data)
 
     if vote_category == "client_lead":
         breakdown = rules.score_client_lead(data)
@@ -44,9 +47,13 @@ def build_opportunity_payload(
             "department": model_data.get("subcategory"),
             "funding_status": model_data.get("funding_status") or "unclear",
             "funding_proof": _snippet(model_data, "funding_proof"),
+            "deadline_proof": _snippet(model_data, "deadline_proof"),
             "email_application_possible": "yes" if model_data.get("email_found") else "unclear",
             "application_email": model_data.get("email_found"),
-            "email_proof": _snippet(model_data, "email_proof"),
+            "email_proof": _snippet(model_data, "email_proof") or extracted.get("email_proof"),
+            "portal_link": model_data.get("application_url"),
+            "research_summary": model_data.get("summary"),
+            "why_fits_profile": model_data.get("reason"),
         }
     elif vote_category == "job":
         breakdown = rules.score_job(data)
@@ -56,6 +63,8 @@ def build_opportunity_payload(
             "language_requirements": model_data.get("language_requirements") or [],
             "email_application_possible": "yes" if model_data.get("email_found") else "unclear",
             "application_email": model_data.get("email_found"),
+            "email_proof": _snippet(model_data, "email_proof") or extracted.get("email_proof"),
+            "portal_url": model_data.get("application_url"),
             "why_fits_profile": model_data.get("reason"),
         }
     elif vote_category == "remote_job":
@@ -90,6 +99,8 @@ def build_opportunity_payload(
         "contact_phone": model_data.get("phone_found"),
         "posted_date": _parse_date(model_data.get("posted_date")),
         "deadline": _parse_date(model_data.get("deadline")),
+        "application_url": model_data.get("application_url"),
+        "required_documents": model_data.get("required_documents") or [],
         "status": _normalize_status(vote_status),
         "final_score": breakdown.final_score,
         "confidence_score": confidence,
@@ -97,7 +108,7 @@ def build_opportunity_payload(
         "content_hash": ch,
         "language": cleaned_post.get("language"),
     }
-    return opp, details, breakdown
+    return opp, details, breakdown, extracted.get("contacts") or []
 
 
 def score_to_row(breakdown: ScoreBreakdown) -> dict[str, Any]:
@@ -124,7 +135,7 @@ def _parse_date(value: Any) -> str | None:
 
 
 def _normalize_status(value: Any) -> str:
-    allowed = {"new", "reviewing", "saved", "rejected", "manual_review", "archived", "stage2_ready"}
+    allowed = {"new", "reviewing", "saved", "rejected", "manual_review", "archived", "stage2_ready", "checked_out"}
     status = str(value or "new").strip()
     if status in allowed:
         return status
@@ -136,3 +147,36 @@ def _normalize_status(value: Any) -> str:
 def _evidence_score(data: dict[str, Any]) -> float:
     ev = data.get("evidence") or []
     return min(100, 40 + len(ev) * 15)
+
+
+def _merge_application_signals(model_data: dict[str, Any], extracted: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(model_data)
+    if not merged.get("email_found") and extracted.get("primary_email"):
+        merged["email_found"] = extracted["primary_email"]
+    if not merged.get("phone_found") and extracted.get("primary_phone"):
+        merged["phone_found"] = extracted["primary_phone"]
+    if not merged.get("application_url") and extracted.get("application_url"):
+        merged["application_url"] = extracted["application_url"]
+    if not merged.get("required_documents") and extracted.get("required_documents"):
+        merged["required_documents"] = extracted["required_documents"]
+    if not merged.get("application_instructions") and extracted.get("application_instructions"):
+        merged["application_instructions"] = extracted["application_instructions"]
+    if merged.get("email_found") and merged.get("application_method") in (None, "", "unknown"):
+        merged["application_method"] = "email"
+    if merged.get("email_found") and merged.get("contact_method") in (None, "", "unknown"):
+        merged["contact_method"] = "email"
+    return merged
+
+
+def _scoring_data(model_data: dict[str, Any]) -> dict[str, Any]:
+    data = {**model_data, "evidence_quality_score": _evidence_score(model_data)}
+    if model_data.get("email_found"):
+        data["contact_email"] = model_data["email_found"]
+        data["email_application_possible"] = "yes"
+    if model_data.get("phone_found"):
+        data["contact_phone"] = model_data["phone_found"]
+    if _snippet(model_data, "funding_proof"):
+        data["funding_proof"] = _snippet(model_data, "funding_proof")
+    if model_data.get("urgency_score") is not None:
+        data["urgency_score"] = model_data.get("urgency_score") or 0
+    return data

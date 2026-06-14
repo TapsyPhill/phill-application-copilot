@@ -99,10 +99,19 @@ class SupabaseRepo:
             .select("*, sources(*)")
             .eq("status", "pending")
             .order("first_seen_at")
-            .limit(limit)
+            .limit(limit * 4)
             .execute()
         )
-        return r.data or []
+        rows = r.data or []
+        priority = {"phd": 0, "job": 1, "remote_job": 2, "client_lead": 3}
+
+        def sort_key(row: dict[str, Any]) -> tuple[int, str]:
+            source = row.get("sources") or {}
+            metadata = row.get("metadata") or {}
+            section = source.get("target_section") or metadata.get("target_section") or ""
+            return (priority.get(section, 4), row.get("first_seen_at") or "")
+
+        return sorted(rows, key=sort_key)[:limit]
 
     def mark_discovered_url(self, url_hash: str, status: str) -> None:
         self._client.table("discovered_urls").update(
@@ -194,7 +203,7 @@ class SupabaseRepo:
             }
             if existing.get("viewed"):
                 preserve["viewed"] = True
-            if existing.get("status") in ("saved", "rejected", "reviewing"):
+            if existing.get("status") in ("saved", "rejected", "reviewing", "stage2_ready", "checked_out", "archived"):
                 preserve["status"] = existing["status"]
             payload = {**payload, **preserve, "times_seen": (existing.get("times_seen") or 1) + 1}
             r = self._client.table("opportunities").update(payload).eq("id", existing["id"]).execute()
@@ -219,6 +228,26 @@ class SupabaseRepo:
             )
         if rows:
             self._client.table("opportunity_evidence").insert(rows).execute()
+
+    def replace_opportunity_contacts(self, opportunity_id: str, contacts: list[dict[str, Any]]) -> None:
+        self._client.table("opportunity_contacts").delete().eq("opportunity_id", opportunity_id).execute()
+        rows = []
+        for contact in contacts:
+            contact_type = contact.get("contact_type")
+            contact_value = contact.get("contact_value")
+            if not contact_type or not contact_value:
+                continue
+            rows.append(
+                {
+                    "opportunity_id": opportunity_id,
+                    "contact_type": contact_type,
+                    "contact_value": contact_value,
+                    "proof_snippet": contact.get("proof_snippet"),
+                    "confidence": contact.get("confidence"),
+                }
+            )
+        if rows:
+            self._client.table("opportunity_contacts").insert(rows).execute()
 
     def insert_score_row(self, opportunity_id: str, breakdown: dict[str, Any]) -> None:
         self._client.table("opportunity_scores").insert(

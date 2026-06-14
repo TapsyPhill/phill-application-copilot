@@ -26,7 +26,19 @@ _SECTION_TERMS = {
         "automation",
         "integration",
     ),
-    "phd": ("phd", "doctoral", "doctorand", "promotion", "stipend", "funded", "researcher"),
+    "phd": (
+        "phd",
+        "doctoral",
+        "doctorand",
+        "promotion",
+        "stipend",
+        "funded",
+        "researcher",
+        "studentship",
+        "scholarship",
+        "candidate",
+        "vacancy",
+    ),
     "job": ("job", "career", "stellen", "position", "data-scientist", "engineer", "analyst"),
     "remote_job": ("remote", "work-from-anywhere", "worldwide", "distributed", "engineer", "developer"),
 }
@@ -76,7 +88,11 @@ def extract_listing_links(
         seen.add(clean)
         text = f"{a.get_text(' ', strip=True)} {clean}".lower()
         score = sum(1 for term in terms if term in text)
-        if terms and score == 0:
+        known_phd_portal = target_section == "phd" and any(
+            portal in domain
+            for portal in ("findaphd.com", "jobs.ac.uk", "academicpositions.com", "euraxess.ec.europa.eu", "scholarshipdb.net")
+        )
+        if terms and score == 0 and not known_phd_portal:
             continue
         candidates.append((score, clean))
 
